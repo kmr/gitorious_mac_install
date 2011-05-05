@@ -326,12 +326,13 @@ bundlerを使って不足パッケージチェック、インストールしま�
 
 
 >|sh|
-% sudo su - git
-% rake db:create RAILS_ENV=production 
-% rake db:setup RAILS_ENV=production
-% rake ultrasphinx:bootstrap RAILS_ENV=production 
-% RAILS_ENV=production script/create_admin
+git% rake db:create RAILS_ENV=production 
+git% rake db:setup RAILS_ENV=production
+git% rake ultrasphinx:bootstrap RAILS_ENV=production 
+git% RAILS_ENV=production script/create_admin
 管理者ユーザのe-mailとパスワードを聞かれるので入力
+git% crontab -e
+* * * * * . ~/.bashrc && /opt/local/gitorious && rake ultrasphinx:index RAILS_ENV=production
 ||<
 
 
