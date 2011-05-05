@@ -1,0 +1,18 @@
+#! /bin/sh
+ 
+RETVAL=0
+STOMP_DAEMON="/opt/local/bin/stompserver"
+SU=/usr/bin/su
+PID_FILE=/opt/local/var/run/stompserver.pid
+
+case "$1" in
+  start)
+    $SU - git -c "$STOMP_DAEMON &"
+    sleep 5
+    ps -U git | grep stomp | awk '{print $1}' > $PID_FILE
+    ;;
+  *)
+    echo $"Usage: $0 {start}"
+    RETVAL=1
+esac
+exit $RETVAL

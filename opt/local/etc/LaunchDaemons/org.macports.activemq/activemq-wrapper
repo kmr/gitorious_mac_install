@@ -1,0 +1,31 @@
+#! /bin/sh
+
+SU=/usr/bin/su
+ACTIVEMQ=/opt/local/activemq/bin/macosx/activemq
+
+RETVAL=0
+START_CMD="${ACTIVEMQ} start"
+STOP_CMD="${ACTIVEMQ} stop"
+RESTART_CMD="${ACTIVEMQ} restart"
+STATUS_CMD="${ACTIVEMQ} status" 
+LOCK_FILE=/opt/local/var/run/activemq
+PID_FILE=/opt/local/var/run/activemq.pid
+ 
+case "$1" in
+  start)
+    ${SU} - activemq -c "$START_CMD"
+    ;;
+  stop)
+    ${SU} - activemq -c "$STOP_CMD"
+    ;;
+  status)
+    ${SU} - activemq -c "$STATUS_CMD"
+    ;;
+  restart)
+    ${SU} - activemq -c "$RESTART_CMD"
+                ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart|status}"
+    RETVAL=1
+esac
+exit $RETVAL

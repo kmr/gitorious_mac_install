@@ -1,0 +1,423 @@
+** ユーザの作成
+
+gitユーザを作ります。
+一般ユーザで普通にユーザ追加してください。
+gitユーザ環境周りの設定として以下のファイルを作成、記述します。
+
+- ~/.bashrc
+
+>|sh|
+export PATH=/opt/local/bin:/opt/local/sbin:$PATH
+||<
+
+- ~/.bash_profile
+
+>||
+if [ -f ~/.bashrc ] ; then
+. ~/.bashrc
+fi
+||<
+
+.profile を .bashrc のシンボリックリンクとして作成しておきます。
+
+>|sh|
+git% ln -s /Users/git/.bash_profile .profile
+||<
+
+ssh設定のディレクトリを作成して、そこに environment というファイルを作成します。
+
+>|sh|
+git% mkdir .ssh
+git% chmod 700 .ssh
+||<
+
+- .ssh/environment
+
+>|sh|
+PATH=/Users/git/contents/gitorious/script:/opt/local/bin:/opt/local/sbin:/usr/local/bin:/usr/local/sbin:/bin:/sbin
+||<
+
+パーミッションを変えておきます。
+
+>|sh|
+git% chmod 644 ~/.ssh/environment
+||<
+
+** sshd の設定
+
+
+ssh経由のpushのためsshdの設定をします。
+
+- /etc/sshd_config
+
+>|sh|
+PermitUserEnvironment yes (コメントを削除し、yesに設定)
+||<
+
+
+** パッケージ群のインストール
+
+必要なパッケージ群をインストールします。
+自分は、macports を使っているのですが、最近はいろいろあるので適当に読み変えてください。
+あと、rubyパッケージをrubygemsでインストールします。
+gem系パッケージは、結構バージョンにうるさいので、エラーとかでバージョンが違うと言われたら素直にそのバージョンをインストールしてあげてください。
+
+>|sh|
+% sudo port -v install apache2 +openldap+preforkmpm
+% sudo port -v install mysql5-server
+% sudo port -v install pcre
+% sudo port -v install oniguruma5
+% sudo port -v install apg
+% sudo port -v install libgeoip
+% sudo port -v install libyaml
+% sudo port -v install php5
+% sudo port -v install phpmyadmin
+% sudo port -v install memcached +umem
+% sudo port load memcached
+% sudo port -v install ImageMagick +graphviz+jbig+jpeg2+lqr+mpeg+perl+q32+rsvg+wmf
+% sudo port -v install sphinx +mysql5
+% sudo gem install -b --no-ri --no-rdoc bluecloth -V
+% sudo gem install -b --no-ri --no-rdoc openid -V
+% sudo gem install -b --no-ri --no-rdoc mime-types -V
+% sudo gem install -b --no-ri --no-rdoc diff-lcs -V
+% sudo gem install -b --no-ri --no-rdoc json -V
+% sudo gem install -b --no-ri --no-rdoc ruby-mysql -V
+% sudo gem install -b --no-ri --no-rdoc mysql -V
+% sudo gem install -b --no-ri --no-rdoc rack -V
+% sudo gem install -b --no-ri --no-rdoc ruby-hmac -V
+% sudo gem install -b --no-ri --no-rdoc echoe -V
+% sudo gem install -b --no-ri --no-rdoc daemons -V
+% sudo gem install -b --no-ri --no-rdoc ruby-yadis
+% sudo gem install -b --no-ri --no-rdoc hoe
+% sudo gem install -b --no-ri --no-rdoc stompserver -V
+% sudo gem install -b --no-ri --no-rdoc chronic -V
+% sudo gem install -b --no-ri --no-rdoc rails -v '2.3.11' -V
+% sudo gem install -b --no-ri --no-rdoc  rdiscount -V
+% sudo gem install -b --no-ri --no-rdoc stomp -V
+% sudo gem install -b --no-ri --no-rdoc geoip -v '0.8.9' -V
+% sudo gem install -b --no-ri --no-rdoc bundler -V
+% sudo gem install -b --no-ri --no-rdoc rmagick -V
+% sudo gem install -b --no-ri --no-rdoc daemons -v '1.1.0' -V
+% sudo gem install -b --no-ri --no-rdoc rubygems-update -v '1.3.6' -V
+% sudo update_rubygems _1.3.6_
+||<
+
+** ActiveMQのインストール
+
+ActiveMQは、ここから最新版をダウンロード、解凍インストールします。
+
+http://activemq.apache.org/download.html
+
+ここでは、/opt/local/activemq に解凍したとします。
+以下のように設定ファイル、起動スクリプトを一部変更します。
+
+- /opt/local/activemq/conf/activemq.xml
+
+>|xml|
+...
+<transportConnectors>
+  <!--
+  元々以下のエントリ
+  <transportConnector name="openwire" uri="tcp://0.0.0.0:61616"/>
+  -->
+  <transportConnector name="localhost" uri="tcp://127.0.0.1:61616"/>
+</transportConnectors>
+||<
+
+- /opt/local/activemq/bin/macosx/activemq
+
+スクリプトの頭に以下のエントリを追加します。
+これは Java関係の環境変数を設定するためです。
+
+>|sh|
+# Setup JAVA
+. /opt/local/.java_env
+||<
+
+上で読み込んでる .java_env を作成します。
+
+- /opt/local/.java_env
+
+>|sh|
+# Setting Java environment
+export JAVA_HOME=/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home
+export PATH=${JAVA_HOME}/bin:${ANT_HOME}/bin:${MAVEN_HOME}/bin:${PATH}
+||<
+
+
+あと、ActiveMQ実行ユーザをgitユーザと同じように作っておきます。
+
+
+** MySQLの設定
+
+MySQLにgitorious用のDBとユーザを作成します。
+gitorious公式のセットアップではrootユーザを使うように書いてありますが、変えた方がいいです。
+
+>|sh|
+% mysql -u root -p
+rootユーザのパスワード入力
+mysql> create database redmine character set utf8;
+mysql> create user 'gitorious(変えてもいい)'@'localhost' identified by '適当なパスワード';
+mysql> grant all privileges on gitorious.* to 'gitorious'@'localhost';
+mysql> quit;
+||<
+
+** gitorious本体の設定
+
+gitorious本体をチェックアウトしていろいろ設定します。
+この辺から、いろいろエラーが発生したり苦労するかもしれません。
+
+
+まず、gitorious のリポジトリから gitorious のコードをクローンしてきます。
+/opt/local/gitorious にインストールすることにします。
+
+>|sh|
+% git clone git://gitorious.org/gitorious/mainline.git gitorious
+% cp -pr gitorious /opt/local/
+% sudo chown -R apache:staff /opt/local/gitorious
+% sudo chown -R git:staff /opt/local/gitorious/script
+% sudo chmod 777 /opt/local/gitorious/log
+% sudo chmod 777 /opt/local/gitorious/tmp/pids
+% sudo mkdir /Users/git/git-repos
+% sudo chown /Users/git/git-repos
+% sudo mkdir -p /Users/git/tmp/tarballs-work
+% sudo mkdir -p /Users/git/tmp/tarballs-cache
+% sudo chown -R /Users/git/tmp
+||<
+
+chown でオーナ指定している apache:staff は、Apache の起動ユーザなので、各環境の設定に合わせて変えてください。
+
+
+いくつかの設定ファイルを自分の環境、使い方に合わせて設定します。
+設定するファイルは、/opt/local/gitorious/config以下にあるサンプルファイルをコピーして使います。
+
+
+>|sh|
+% cd /opt/local/gitorious/config
+% sudo cp -p broker.example.yml broker.yml
+% sudo cp -p gitorious.sample.yml gitorious.yml
+% sudo cp -p database.sample.yml database.yml
+||<
+
+
+以下でランダム文字列を設定する必要がありますので、事前に以下のコマンドを実行して出力される文字列をコピーしておきます。
+改行は削除して1行にしてください。
+
+
+>|sh|
+% apg -m 64
+uvnu.....
+.....non_
+||<
+
+
+- /opt/local/gitorious/config/gitorious.yml
+
+
+>|ruby|
+production: 
+  # The session secret key (`apg -m 64` is always useful for this kinda stuff)
+  cookie_secret: uvnu.....non_ (上で作ったやつ)
+  
+  # The path where git repositories are stored. The actual (bare) repositories resides
+  # in repository_base_path/#{project.slug}/#{repository.name}.git/:
+  repository_base_path: "/Users/git/git-repos"
+
+  # Stuff that's in the html <head>. custom stats javascript code etc
+  extra_html_head_data: 
+  
+  # System message that will appear on all pages if present
+  system_message: 
+  
+  # Port the ./script/gitorious script should use:
+  gitorious_client_port: 3000
+
+  # Host the ./script/gitorious script should use:
+  gitorious_client_host: localhost
+
+  # Host which is serving the gitorious app, eg "gitorious.org"
+  gitorious_host: github.example.com (このgitoriousを運用するサーバのDNS登録名) 
+
+  # User which is running git daemon
+  gitorious_user: git
+
+  # Email address to the support for the Gitorious server
+  gitorious_support_email: gitorious@example.com (サポートメールアドレス)
+
+  # Email spam on server errors to:
+  exception_notification_emails:  
+
+  # Mangle visible e-mail addresses (spam protection)
+  mangle_email_addresses: true
+
+  # Enable or Disable Public Mode (true) or Private Mode (false)
+  public_mode: false (これをfalseにすると新規ユーザ追加できなくなる)
+
+  # Define your locale
+  locale: en
+
+  # Where should we store generated tarballs?
+  # (should be readable by webserver, since we tell it to send the file using X-Sendfile)
+  archive_cache_dir: "/Users/git/tmp/tarballs-cache"
+  # Which directory should we work in when we generate tarballs, before moving 
+  # them to the above dir?
+  archive_work_dir: "/Users/git/tmp/tarballs-work"
+
+  # is it only site admins who can create new projects?
+  only_site_admins_can_create_projects: false
+  
+  # Should we hide HTTP clone urls?
+  hide_http_clone_urls: false
+
+  # Use SSL? Requires web server configuration. Recommended for security. Forces the use of
+  # HTTPS on login page and all pages while user is logged in
+  use_ssl: true
+
+  # Is this gitorious.org? Read: should we have a very flashy homepage?
+  is_gitorious_dot_org: false
+
+  # Pick a default license
+  #default_license: GNU Affero General Public License (AGPLv3)
+||<
+
+
+- database.yml
+
+
+>|ruby|
+# MySQL (default setup).  Versions 4.1 and 5.0 are recommended.
+#
+# Install the MySQL driver:
+#   gem install mysql
+# On MacOS X:
+#   gem install mysql -- --include=/usr/local/lib
+# On Windows:
+#   gem install mysql
+#       Choose the win32 build.
+#       Install MySQL and put its /bin directory on your path.
+#
+# And be sure to use new-style password hashing:
+#   http://dev.mysql.com/doc/refman/5.0/en/old-client.html
+production:
+  adapter: mysql
+  database: gitorious
+  username: gitorious 
+  password: MySQLの設定で指定したgitoriousユーザのパスワード
+  host: localhost
+  encoding: utf8
+||<
+
+
+- broker.yml
+
+そのままでOK。
+
+
+bundlerを使って不足パッケージチェック、インストールします。
+ここで、バージョンが違うというエラーが出たら、指定されたバージョンのgemパッケージをインストールしてください。
+
+>|sh|
+% cd /opt/local/gitorious
+% sudo bundle install
+||<
+
+
+最後に、データベースを初期化、管理者ユーザの作成など。
+
+
+>|sh|
+% sudo su - git
+% rake db:create RAILS_ENV=production 
+% rake db:setup RAILS_ENV=production
+% rake ultrasphinx:bootstrap RAILS_ENV=production 
+% RAILS_ENV=production script/create_admin
+管理者ユーザのe-mailとパスワードを聞かれるので入力
+||<
+
+
+** Apacheの設定
+
+まずは、passengerモジュールをインストール。
+今回は、macportsでインストールしたApacheを使うので、オプションを指定します。
+
+
+>|sh|
+# sudo /opt/local/bin/passenger-install-apache2-module --apxs2-path /opt/local/apache2/bin/apxs --apr-config-path /opt/local/bin/apr-1-config
+||<
+
+
+Apacheは、VirtualHostを作成します。
+つまり専用のサーバ名を与えます。
+当然、この名前で名前解決できる必要があります。
+
+
+>|conf|
+LoadModule passenger_module /opt/local/lib/ruby/gems/1.8/gems/passenger-3.0.7/ext/apache2/mod_passenger.so
+PassengerRoot /opt/local/lib/ruby/gems/1.8/gems/passenger-3.0.7
+PassengerRuby /opt/local/bin/ruby
+
+<VirtualHost *:80>
+  ServerName github.example.com (gitorious.ymlのgitorious_hostと合わせる)
+  DocumentRoot /opt/local/gitorious/public
+
+  <Directory "/opt/local/gitorious/public" >
+    Order deny,allow
+    Allow from all
+  </Directory>
+</VirtualHost>
+
+<VirtualHost *:443>
+  ServerName github.example.com (gitorious.ymlのgitorious_hostと合わせる)
+  DocumentRoot /opt/local/gitorious/public
+
+  ServerAdmin admin@example.com
+  ErrorLog "/opt/local/apache2/logs/error_log"
+  TransferLog "/opt/local/apache2/logs/access_log"
+  SSLEngine on
+  SSLCipherSuite ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL
+  SSLCertificateFile "/opt/local/apache2/conf/github.example.com.cert.pem" (SSLサーバ鍵についてはググればいっぱい出てきます)
+  SSLCertificateKeyFile "/opt/local/apache2/conf/github.example.com.key.pem"
+
+  BrowserMatch ".*MSIE.*" \
+         nokeepalive ssl-unclean-shutdown \
+         downgrade-1.0 force-response-1.0
+  CustomLog "/opt/local/apache2/logs/ssl_request_log" \
+          "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+
+  <Directory "/opt/local/gitorious/public" >
+    Order deny,allow
+    Allow from all
+  </Directory>
+</VirtualHost>
+||<
+
+
+** 自動起動設定
+
+自動起動の設定方法はいろいろありますが、個人的に一番分かりやすいmacports系デーモンのまねで設定します。
+起動スクリプトなどは、/opt/local/etc/LaunchDaemon 以下の作成します。
+スクリプトは、github に置いておきますので参考にしてください。
+
+
+これらのスクリプトをMac起動時に起動するよう設定します。
+
+
+>|sh|
+% sudo ln -s /opt/local/etc/LaunchDaemon/org.macports.activemq.plist /Library/LaunchDaemons/org.macports.activemq.plist
+% sudo ln -s /opt/local/etc/LaunchDaemon/org.macports.stompserver.plist /Library/LaunchDaemons/org.macports.stompserver.plist
+% sudo ln -s /opt/local/etc/LaunchDaemon/org.macports.git-daemon.plist /Library/LaunchDaemons/org.macports.git-daemon.plist
+% sudo ln -s /opt/local/etc/LaunchDaemon/org.macports.git-poller.plist /Library/LaunchDaemons/org.macports.git-poller.plist
+% sudo ln -s /opt/local/etc/LaunchDaemon/org.macports.git-ultrasphinx.plist /Library/LaunchDaemons/org.macports.git-ultrasphinx.plist
+
+% sudo launchctl load -w /Library/LaunchDaemons/org.macports.activemq.plist
+% sudo launchctl load -w /Library/LaunchDaemons/org.macports.stompserver.plist
+% sudo launchctl load -w /Library/LaunchDaemons/org.macports.git-daemon.plist
+% sudo launchctl load -w /Library/LaunchDaemons/org.macports.git-poller.plist
+% sudo launchctl load -w /Library/LaunchDaemons/org.macports.git-ultrasphinx.plist
+||<
+
+
+これで、https://github.example.com/ にアクセスして管理者ユーザでログインしたり、ユーザ登録したり、プロジェクト、リポジトリ作ったり、push、pullしたりして問題なければOK。
+
+
+途中、うまく動かなくて『あーもー』となってメモ取るの忘れた部分もあるかもしれませんが、その時はコメントか github のメモ修正してください。

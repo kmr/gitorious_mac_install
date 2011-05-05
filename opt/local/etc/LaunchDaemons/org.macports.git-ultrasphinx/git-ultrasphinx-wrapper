@@ -1,0 +1,30 @@
+#! /bin/sh
+SU=/usr/bin/su
+GITORIOUS=/opt/local/gitorious/
+
+RETVAL=0
+START_CMD=". ~/.bashrc && cd ${GITORIOUS} && rake ultrasphinx:daemon:start RAILS_ENV=production"
+STOP_CMD=". ~/.bashrc && cd ${GITORIOUS} && rake ultrasphinx:daemon:stop RAILS_ENV=production"
+RESTART_CMD=". ~/.bashrc && cd ${GITORIOUS} && rake ultrasphinx:daemon:restart RAILS_ENV=production"
+STATUS_CMD=". ~/.bashrc && cd ${GITORIOUS} && rake ultrasphinx:daemon:status RAILS_ENV=production" 
+LOCK_FILE=/opt/local/var/run/git-ultrasphinx
+PID_FILE=/opt/local/gitorious/log/searchd.pid
+ 
+case "$1" in
+  start)
+    ${SU} - git -c "$START_CMD"
+    ;;
+  stop)
+    ${SU} - git -c "$STOP_CMD"
+    ;;
+  status)
+    ${SU} - git -c "$STATUS_CMD"
+    ;;
+  restart)
+    ${SU} - git -c "$RESTART_CMD"
+                ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart|status}"
+    RETVAL=1
+esac
+exit $RETVAL

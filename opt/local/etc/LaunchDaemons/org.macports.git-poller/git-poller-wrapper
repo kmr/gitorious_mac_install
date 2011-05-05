@@ -1,0 +1,45 @@
+#! /bin/sh
+
+SU=/usr/bin/su
+GITORIOUS=/opt/local/gitorious/
+
+RETVAL=0
+CMD=". ~/.bashrc && cd ${GITORIOUS} && RAILS_ENV=production script/poller"
+LOCK_FILE=/opt/local/var/run/git-poller
+PID_FILE=/opt/local/gitorious/log/poller.pid
+
+check_stomp()
+{
+  STOMP=`ps -U git | grep stomp | wc -l`
+  if [ $STOMP != 1 ] ; then
+    return 0
+  fi
+  return 1 
+}
+ 
+case "$1" in
+  start)
+    if [ check_stomp == 0 ] ; then
+      sleep 30
+    fi
+    if [ check_stomp == 0 ] ; then
+      RETVAL=1
+    else
+      ${SU} - git -c "$CMD run"
+      RETVAL=$? 
+    fi
+    ;;
+  stop)
+    ${SU} - git -c "$CMD stop"
+    ;;
+  status)
+    ${SU} - git -c "$CMD status"
+    ;;
+  restart)
+    ${SU} - git -c "$CMD restart"
+                ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart|status}"
+    RETVAL=1
+esac
+exit $RETVAL
