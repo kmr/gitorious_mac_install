@@ -2,6 +2,7 @@
 
 gitユーザを作ります。
 一般ユーザで普通にユーザ追加してください。
+gitユーザでssh接続できるように、共有設定なども確認します。
 gitユーザ環境周りの設定として以下のファイルを作成、記述します。
 
 - ~/.bashrc
@@ -76,6 +77,7 @@ gem系パッケージは、結構バージョンにうるさいので、エラ�
 % sudo port load memcached
 % sudo port -v install ImageMagick +graphviz+jbig+jpeg2+lqr+mpeg+perl+q32+rsvg+wmf
 % sudo port -v install sphinx +mysql5
+% sudo port -v install git-core
 % sudo gem install -b --no-ri --no-rdoc bluecloth -V
 % sudo gem install -b --no-ri --no-rdoc openid -V
 % sudo gem install -b --no-ri --no-rdoc mime-types -V
@@ -230,10 +232,10 @@ production:
   system_message: 
   
   # Port the ./script/gitorious script should use:
-  gitorious_client_port: 3000
+  gitorious_client_port: 80
 
   # Host the ./script/gitorious script should use:
-  gitorious_client_host: localhost
+  gitorious_client_host: github.example.com (このgitoriousを運用するサーバのDNS登録名) 
 
   # Host which is serving the gitorious app, eg "gitorious.org"
   gitorious_host: github.example.com (このgitoriousを運用するサーバのDNS登録名) 
